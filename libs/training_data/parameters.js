@@ -23,9 +23,9 @@ function Parameters() {
   this.exclude = ["first_name", "last_name", "last_status_update", "phone", "mobile", "status", "amount", "frequency_score"];
   
   //parameter mapping, needed to map original records to an orthogonal representation of the record 
-  var _parameterMapping = {}; 
+  this._parameterMapping = {}; 
   //lookup list that belongs to _parameterMapping list
-  var _mappingLookUp = {};
+  this._mappingLookUp = {};
 }
 
 //
