@@ -1,6 +1,6 @@
 fs = require('fs') //MW: enable file io 
 _ = require('underscore');
-eval(fs.readFileSync('./correlations.js')+'');
+eval(fs.readFileSync('./../utils/correlations.js')+'');
 eval(fs.readFileSync('./parameters.js')+'');
 
 //TrainingSet: this object holds the array of training data, the class is responsible for loading and preporcessing the data

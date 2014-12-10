@@ -1,13 +1,27 @@
+//
+//Correlations: object that holds on to an array (really a dictionary of vectors) of doubles
+//correlations between vectors are calculated. Most part of the calculation is already performed when the array value is set.
+//after that only the cross terms as you will remain to be calculated. This is carried out once calculateCorrelations is called. 
+//
 function Correlations() {
 
+  //vectors of orthogonal parameter data. There number of vectors matches the number of parameters. 
   this._vectors = [];
+  //original array of values (dictionary of orthogonal record data)
   this._array = {};
+  //array of ids that is used as an intermediary to convert and index to an key (id as present in _array). This array effectively freezes the order of the keys in _array
   this._ids = [];
+  //sumX for each vector, used to calculate the correlation 
   this._sumX = [];
+  //sumX2 (squared) for each vector, used to calculate the correlation 
   this._sumX2 = [];
+  //mask that represents which parameters will be eliminated (value = 1 aka not 0) and which stay (value = 0). 
   this._eliminationMask = [];
 }
 
+//
+//setArray: The precalculations are wrapped in this setter function. Note that parameters are not shielded, so it is possible for other users to incorerctly set _array in case this method is not used
+//
 Correlations.prototype.setArray = function(value){
   this._array = value;
   for (var key in value) //MW: this array is created to freeze the order of the keys in the _array object  
@@ -17,6 +31,9 @@ Correlations.prototype.setArray = function(value){
   this.setVectors();
 }
 
+//
+//setVectors: method to initialize the vectors from the _array (input) and precalculate sumX and sumX2
+//
 Correlations.prototype.setVectors = function(){
   var n = this._ids.length;
   var m = this._array[this._ids[0]].length;
@@ -34,6 +51,9 @@ Correlations.prototype.setVectors = function(){
   }
 }
 
+//
+//
+//
 Correlations.prototype.calculateCorrelation = function(j,k) {
   var sumXY = 0;
   var n = this._vectors[0].length;
