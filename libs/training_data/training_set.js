@@ -40,6 +40,10 @@ function TrainingSet() {
     }
     return _keys;
   }
+  //method to obtain the number of transaction that is present in the TrainingSet
+  this.numberOfTransaction = function(){
+    return this._parameters._correlations._ids.length;
+  }
 }
 
 //
@@ -51,19 +55,27 @@ TrainingSet.prototype.load = function(path, filename) {
 }
 
 //
-//adjustTransactions: update transactions with; full_name, amount and frequency score attributes
+//adjustTransactions: update transactions with; full_name and amount
 //
 TrainingSet.prototype.adjustTransactions = function() {
-  console.log("updating transactions full_name, amount and frequency_score ...");
+  console.log("updating transactions full_name and amount ...");
   for (var i in this._transactions){
     this._transactions[i]["full_name"] = this._transactions[i]["first_name"] + " " + this._transactions[i]["last_name"];
     this._transactions[i]["amount"] = this._transactions[i]["amount"] / this._amountScaleFactor;
+  }
+  this._newTransaction[0]["full_name"] = this._newTransaction[0]["first_name"] + " " + this._newTransaction[0]["last_name"];
+  this._newTransaction[0]["amount"] = this._newTransaction[0]["amount"] / this._amountScaleFactor;
+}
+
+//
+//createFrequencyScore: update transactions with frequency score attributes
+//
+TrainingSet.prototype.createFrequencyScore = function() {
+  console.log("updating transactions with frequency_score ...");
+  for (var i in this._transactions){
     this._transactions[i]["frequency_score"] = this.frequencyScore(this._transactions[i]["full_name"], Date.parse(this._transactions[i]["created_at"]));
   }
-  //MW: probably best to relocate these statements...
-  this._newTransaction[0]["full_name"] = this._newTransaction["first_name"] + " " + this._newTransaction["last_name"];
-  this._newTransaction[0]["amount"] = this._newTransaction["amount"] / this._amountScaleFactor;
-  this._newTransaction[0]["frequency_score"] = this.frequencyScore(this._newTransaction["full_name"], Date.parse(this._newTransaction["created_at"]));
+  this._newTransaction[0]["frequency_score"] = this.frequencyScore(this._newTransaction[0]["full_name"], Date.parse(this._newTransaction[0]["created_at"]));
 }
 
 //
@@ -79,6 +91,7 @@ TrainingSet.prototype.frequencyScore = function(fullName, createdAt){
   var prevList = this.getTransactionHistory().filter(function(value){
     return value.full_name === fullName && value.created_at < createdAt;  
   });
+
   //if (prevList.count == 0) { return 0.0; }
   //prevList.sort(function(a,b) { return b.created_at - a.created_at }); //MW: alternative implementation (slower) sort (desc) the values and select the first item
   var _prev_ = 0;
@@ -112,14 +125,36 @@ TrainingSet.prototype.preProcess = function() {
   this._newTransaction = JSON.parse(this.load("./../../data/", "new_transaction.json"));
   this._transactions = JSON.parse(this.load("./../../data/", "example_transactions.json"));
   this.adjustTransactions();
+  this.createFrequencyScore();
   this.categorize();
   this._parameters.orthogonalizeSet(this._transactions);
   this._parameters.calculateCorrelations();
   this._parameters.eliminateCorrelatedParameters();
+
+  console.log(this.getTransactionInput(0));
+  console.log(this.getTransactionOutput(0));
+}
+
+//
+//getTransaction: gives the processed transaction data for the index^th transaction
+//
+TrainingSet.prototype.getTransactionInput = function(index) {
+  var id = this._parameters._correlations._ids[index];
+  return this._parameters._orthogonal[id];
+}
+
+//
+//getTransactionOutput: indicates whether the transaction has been "Chargedback".
+//
+TrainingSet.prototype.getTransactionOutput = function(index) {
+  var id = this._parameters._correlations._ids[index];
+  var status = this._transactions.filter(function(value){
+    return value["id"] === id && value["status"] === "Chargeback";  
+  });
+  return (status.length != 0); 
 }
 
 t = new TrainingSet();
 
 t.preProcess(t);
-
 

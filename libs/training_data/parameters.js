@@ -54,6 +54,8 @@ Parameters.prototype.generateMapping = function() {
   console.log("generating parameter mapping ...");
   var k = 0;
   for (var key in this._uniqueValues) {
+    console.log(key);
+    console.log(this.includeField(key));
     if (this.includeField(key)) {
       for (var i = 0; i < this._uniqueValues[key].length; i++) {
         this._parameterMapping[key + "-" + this._uniqueValues[key][i]] = k;

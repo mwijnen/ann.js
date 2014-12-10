@@ -52,7 +52,7 @@ Correlations.prototype.setVectors = function(){
 }
 
 //
-//
+//calculateCorrelation: calculates the correlation between orthogonal parameter values stored at positions j and k
 //
 Correlations.prototype.calculateCorrelation = function(j,k) {
   var sumXY = 0;
@@ -66,6 +66,10 @@ Correlations.prototype.calculateCorrelation = function(j,k) {
   return covariance / stdXj / stdXk;
 }
 
+//
+//calculateCorrelations: calculates the correlations between all parameter values and 
+//filters parameter values that are correlated to an earlier parameter value.
+//
 Correlations.prototype.calculateCorrelations = function() {
   this._eliminationMask = new Array(this._vectors.length+1).join('0').split('').map(parseFloat);
   var eliminationLog = {};
