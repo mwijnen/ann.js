@@ -1,19 +1,12 @@
-fs = require('fs') //MW: enable file io 
-_ = require('underscore');
-eval(fs.readFileSync('./../utils/correlations.js')+'');
-eval(fs.readFileSync('./parameters.js')+'');
-
 //
 //TrainingSet: this object holds the array of training data, the class is responsible for loading and preporcessing the data
 //
 function TrainingSet() {
-  
+
   //parameter object holds all unique values and has the capability to process the parameters to an orthogonal set
   this._parameters = new Parameters();
   //historical transaction set
-  this._transactions = null;
-  //new transaction
-  this._newTransaction = null;  
+  this._transactions = null; 
   //transaction history per user, used to create transaction frequency score
   var _transactionHistory = [];
   //property that wraps the initialization query
@@ -40,14 +33,10 @@ function TrainingSet() {
     }
     return _keys;
   }
-  //method to obtain the number of transaction that is present in the TrainingSet
-  this.numberOfTransaction = function(){
-    return this._parameters._correlations._ids.length;
-  }
 }
 
 //
-//load: loads the example transactions into the training set
+//load: loads the transactions from file
 //
 TrainingSet.prototype.load = function(path, filename) {
   console.log("loading data from file:" + filename + " ...");
@@ -63,8 +52,6 @@ TrainingSet.prototype.adjustTransactions = function() {
     this._transactions[i]["full_name"] = this._transactions[i]["first_name"] + " " + this._transactions[i]["last_name"];
     this._transactions[i]["amount"] = this._transactions[i]["amount"] / this._amountScaleFactor;
   }
-  this._newTransaction[0]["full_name"] = this._newTransaction[0]["first_name"] + " " + this._newTransaction[0]["last_name"];
-  this._newTransaction[0]["amount"] = this._newTransaction[0]["amount"] / this._amountScaleFactor;
 }
 
 //
@@ -75,7 +62,6 @@ TrainingSet.prototype.createFrequencyScore = function() {
   for (var i in this._transactions){
     this._transactions[i]["frequency_score"] = this.frequencyScore(this._transactions[i]["full_name"], Date.parse(this._transactions[i]["created_at"]));
   }
-  this._newTransaction[0]["frequency_score"] = this.frequencyScore(this._newTransaction[0]["full_name"], Date.parse(this._newTransaction[0]["created_at"]));
 }
 
 //
@@ -106,7 +92,6 @@ TrainingSet.prototype.frequencyScore = function(fullName, createdAt){
 //
 TrainingSet.prototype.categorize = function() {
   console.log("categorizing parameters ...");
-  this._transactions.push(this._newTransaction[0]); //MW: make sure the new transaction will be part of the solution space
   var keys = this.getKeys();
   //
   //query unique values per parameter
@@ -115,15 +100,13 @@ TrainingSet.prototype.categorize = function() {
     this._parameters._uniqueValues[keys[i]] = _.chain(this._transactions).map(function(item) { return item[keys[i]] }).uniq().value();
   }
   this._parameters.generateMapping();
-  this._transactions.pop(); //MW: taking the new_transaction out again
 }
 
 //
 //preProcess: performs all actions needed to load and process the training set
 //
 TrainingSet.prototype.preProcess = function() {
-  this._newTransaction = JSON.parse(this.load("./../../data/", "new_transaction.json"));
-  this._transactions = JSON.parse(this.load("./../../data/", "example_transactions.json"));
+  this._transactions = JSON.parse(this.load("./data/", "example_transactions.json"));
   this.adjustTransactions();
   this.createFrequencyScore();
   this.categorize();
@@ -148,27 +131,37 @@ TrainingSet.prototype.getTransactionOutput = function(index) {
   var status = this._transactions.filter(function(value){
     return value["id"] === id && value["status"] === "Chargeback";  
   });
-  return (status.length != 0) ? 1.0 : 0.0; 
+  return (status.length != 0) ? [1.0] : [0.0]; 
 }
 
 //
-//getNewTransactionInput: method to obtain the processed version of the new record
+//getLength: method to obtain the dimensions of the training set. Number of transactions (index = 0) and number of parameters (index = 1).
 //
-TrainingSet.prototype.getNewTransactionInput = function(){
-  var orthogonal = this._parameters.orthogonalize(this._newTransaction[0]);
-  console.log("new_transaction:");
-  console.log(orthogonal);
+TrainingSet.prototype.getLength = function(index){
+  if (index == 0){
+    return this._parameters._correlations._ids.length;  
+  }
+  else if (index == 1) {
+    var key = this._parameters._correlations._ids[0]
+    return this._parameters._orthogonal[key].length;
+  }
+  return 0;    
+}
+
+//
+//orthogonalizeTransaction: method that processes the transaction and returns its orthogonal counterpart.
+//
+TrainingSet.prototype.orthogonalizeTransaction = function(transaction){
+  transaction["full_name"] = transaction["first_name"] + " " + transaction["last_name"];
+  transaction["amount"] = transaction["amount"] / this._amountScaleFactor;
+  transaction["frequency_score"] = this.frequencyScore(transaction["full_name"], Date.parse(transaction["created_at"]));
+  console.log("\ntransaction:");
+  console.log(JSON.stringify(transaction));
+  var orthogonal = this._parameters.orthogonalize(transaction);
+  console.log("\northogonal representation:");
+  console.log(JSON.stringify(orthogonal));
   this._parameters.eliminateByMask(orthogonal);
+  console.log("\northogonal representation after correlated parameters have been removed:");
+  console.log(JSON.stringify(orthogonal));
   return orthogonal;
 }
-
-t = new TrainingSet();
-
-t.preProcess(t);
-
-console.log(t.numberOfTransaction());
-console.log(t.getTransactionInput(0));
-console.log(t.getTransactionOutput(0));
-var newTransactionInput = t.getNewTransactionInput();
-console.log(newTransactionInput.length);
-console.log(newTransactionInput);

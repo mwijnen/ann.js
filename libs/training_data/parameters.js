@@ -40,7 +40,7 @@ Parameters.prototype.includeField = function(key) {
   if (key in this._uniqueValues) {
     var condition01 = this.exclude.indexOf(key) == -1; //MW: parameters that are on the manual exclude list are excluded
     var condition02 = this._uniqueValues[key].length > 1; //MW: homogeneous parameters are excluded
-    var condition03 = this._uniqueValues[key].length < this._uniqueValues["id"].length -1; //MW: parameters that are different for each transaction don't have any forcasting value and are excluded. The minus one here deals with the NULL item
+    var condition03 = this._uniqueValues[key].length < this._uniqueValues["id"].length; //MW: parameters that are different for each transaction don't have any forcasting value and are excluded.
     return condition01 && condition02 && condition03;
   }
   return false;
@@ -85,10 +85,9 @@ Parameters.prototype.orthogonalize = function(record) {
       default:
         if (this.includeField(key)) { //MW: make sure the field should be included in the representation
           index = this._parameterMapping[key + "-" + record[key]];
-          if (index == undefined) {
-            throw "orthogonalize:key value combination not found - the programm has been corrupted. stopping now ...";
+          if (index != undefined) {
+            a[index] = 1.0;
           }
-          a[index] = 1.0;
         }
     }
   }
