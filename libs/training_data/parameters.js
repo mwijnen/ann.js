@@ -54,8 +54,6 @@ Parameters.prototype.generateMapping = function() {
   console.log("generating parameter mapping ...");
   var k = 0;
   for (var key in this._uniqueValues) {
-    console.log(key);
-    console.log(this.includeField(key));
     if (this.includeField(key)) {
       for (var i = 0; i < this._uniqueValues[key].length; i++) {
         this._parameterMapping[key + "-" + this._uniqueValues[key][i]] = k;
@@ -126,14 +124,15 @@ Parameters.prototype.calculateCorrelations = function() {
 Parameters.prototype.eliminateCorrelatedParameters = function() {
   console.log("eliminating correlated parameters ..."); 
   for (var k in this._orthogonal) {
-    this.eliminateByMask(this._orthogonal[k], this._correlations._eliminationMask)
+    this.eliminateByMask(this._orthogonal[k])
   }
 }
 
 //
 //eliminateByMask: method that eliminates array elements based on a mask
 //
-Parameters.prototype.eliminateByMask = function(row, mask) {
+Parameters.prototype.eliminateByMask = function(row) {
+  var mask = this._correlations._eliminationMask;
   if (row.length != mask.length) { throw "eliminateByMask:Input error - mask size needs to match row size"; }
   //
   //MW: super important for the elimination to work backwards. Otherwise the elimination indices will be messed up.

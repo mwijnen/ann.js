@@ -130,9 +130,6 @@ TrainingSet.prototype.preProcess = function() {
   this._parameters.orthogonalizeSet(this._transactions);
   this._parameters.calculateCorrelations();
   this._parameters.eliminateCorrelatedParameters();
-
-  console.log(this.getTransactionInput(0));
-  console.log(this.getTransactionOutput(0));
 }
 
 //
@@ -151,10 +148,27 @@ TrainingSet.prototype.getTransactionOutput = function(index) {
   var status = this._transactions.filter(function(value){
     return value["id"] === id && value["status"] === "Chargeback";  
   });
-  return (status.length != 0); 
+  return (status.length != 0) ? 1.0 : 0.0; 
+}
+
+//
+//getNewTransactionInput: method to obtain the processed version of the new record
+//
+TrainingSet.prototype.getNewTransactionInput = function(){
+  var orthogonal = this._parameters.orthogonalize(this._newTransaction[0]);
+  console.log("new_transaction:");
+  console.log(orthogonal);
+  this._parameters.eliminateByMask(orthogonal);
+  return orthogonal;
 }
 
 t = new TrainingSet();
 
 t.preProcess(t);
 
+console.log(t.numberOfTransaction());
+console.log(t.getTransactionInput(0));
+console.log(t.getTransactionOutput(0));
+var newTransactionInput = t.getNewTransactionInput();
+console.log(newTransactionInput.length);
+console.log(newTransactionInput);
